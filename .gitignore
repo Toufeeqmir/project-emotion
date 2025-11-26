@@ -1,0 +1,14 @@
+# Ignore the dataset (Too large for GitHub)
+New-dataset/
+
+# Ignore the virtual environment (Not needed)
+venv/
+.env
+
+# Ignore compiled python files
+__pycache__/
+*.pyc
+
+# Ignore large model files (Optional: If they are >100MB)
+# *.h5
+# *.keras

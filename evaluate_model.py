@@ -1,0 +1,49 @@
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, confusion_matrix
+import numpy as np
+import os
+
+# === Load trained model ===
+model_path = "emotion_final_6class.keras"
+model = load_model(model_path)
+
+# === Get model input size ===
+input_shape = model.input_shape[1:3]
+print(f"Model expects input size: {input_shape}")
+
+# === Dataset paths ===
+base_dir = r"E:\python\New-dataset"
+test_dir = os.path.join(base_dir, "test")
+
+# === Data generator ===
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+test_gen = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=input_shape,
+    batch_size=32,
+    class_mode='categorical',
+    shuffle=False
+)
+
+# === Evaluate model ===
+loss, acc = model.evaluate(test_gen)
+print(f"\n✅ Model Evaluation Complete")
+print(f"Accuracy: {acc * 100:.2f}%")
+print(f"Loss: {loss:.4f}")
+
+# === Predict classes ===
+y_pred_probs = model.predict(test_gen)
+y_pred = np.argmax(y_pred_probs, axis=1)
+y_true = test_gen.classes
+class_labels = list(test_gen.class_indices.keys())
+
+# === Classification Report ===
+print("\n📊 Classification Report:")
+print(classification_report(y_true, y_pred, target_names=class_labels))
+
+# === Confusion Matrix ===
+cm = confusion_matrix(y_true, y_pred)
+print("\n🌀 Confusion Matrix:")
+print(cm)
