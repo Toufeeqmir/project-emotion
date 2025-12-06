@@ -12,7 +12,6 @@ CORS(app)
 # =========================================================
 # CONFIGURATION
 # =========================================================
-# Make sure this matches the filename you uploaded to GitHub!
 MODEL_FILENAME = 'emotion_final_6class.keras'
 CLASS_NAMES = ['anger', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
@@ -30,20 +29,26 @@ else:
 def prepare_image(image_bytes):
     """Prepares the image to match the model's expected input"""
     img = Image.open(io.BytesIO(image_bytes))
-    # Ensure image is RGB (converts PNG/JPEG)
+    
+    # Ensure image is RGB
     if img.mode != "RGB":
         img = img.convert("RGB")
-    # Resize to 224x224
-    img = img.resize((224, 224))
+    
+    # --- THIS IS THE FIX ---
+    # We changed (224, 224) to (48, 48) to match your model
+    img = img.resize((48, 48)) 
+    # -----------------------
+    
     # Convert to array and normalize (0-1)
     img_array = np.array(img)
     img_array = img_array / 255.0
+    
     # Add batch dimension
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 
 # =========================================================
-# ROUTE 1: HOME PAGE (For Browser Checks)
+# ROUTE 1: HOME PAGE
 # =========================================================
 @app.route('/', methods=['GET'])
 def home():
@@ -56,7 +61,7 @@ def home():
     """
 
 # =========================================================
-# ROUTE 2: PREDICTION (For the App/Website)
+# ROUTE 2: PREDICTION
 # =========================================================
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -87,5 +92,4 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Run the server
     app.run(debug=True, port=5000)
