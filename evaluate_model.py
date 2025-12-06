@@ -6,15 +6,27 @@ import os
 
 # === Load trained model ===
 model_path = "emotion_final_6class.keras"
+
+if not os.path.exists(model_path):
+    print(f"❌ Error: Model file '{model_path}' not found!")
+    exit()
+
 model = load_model(model_path)
 
 # === Get model input size ===
+# This automatically detects if your model needs (48,48) or (224,224)
 input_shape = model.input_shape[1:3]
 print(f"Model expects input size: {input_shape}")
 
-# === Dataset paths ===
-base_dir = r"E:\python\New-dataset"
+# === Dataset paths (FIXED) ===
+# We use a relative path now. It looks for "New-dataset" inside the current folder.
+base_dir = "New-dataset"
 test_dir = os.path.join(base_dir, "test")
+
+if not os.path.exists(test_dir):
+    print(f"❌ Error: Test folder not found at: {os.path.abspath(test_dir)}")
+    print("Please make sure the 'New-dataset' folder is inside 'E:\\Aicoach\\python'")
+    exit()
 
 # === Data generator ===
 test_datagen = ImageDataGenerator(rescale=1./255)
@@ -28,12 +40,14 @@ test_gen = test_datagen.flow_from_directory(
 )
 
 # === Evaluate model ===
+print("\nEvaluating model on test data...")
 loss, acc = model.evaluate(test_gen)
 print(f"\n✅ Model Evaluation Complete")
 print(f"Accuracy: {acc * 100:.2f}%")
 print(f"Loss: {loss:.4f}")
 
 # === Predict classes ===
+print("\nGenerating predictions for Report...")
 y_pred_probs = model.predict(test_gen)
 y_pred = np.argmax(y_pred_probs, axis=1)
 y_true = test_gen.classes

@@ -12,7 +12,6 @@ CORS(app)
 # =========================================================
 # CONFIGURATION
 # =========================================================
-# This matches the filename in your screenshot
 MODEL_FILENAME = 'emotion_final_6class.keras'
 CLASS_NAMES = ['anger', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
@@ -30,18 +29,40 @@ else:
 def prepare_image(image_bytes):
     """Prepares the image to match the model's expected input"""
     img = Image.open(io.BytesIO(image_bytes))
-    # Ensure image is RGB (converts PNG/JPEG)
+    
+    # Ensure image is RGB
     if img.mode != "RGB":
         img = img.convert("RGB")
-    # Resize to 224x224
-    img = img.resize((224, 224))
+    
+    # --- THIS IS THE FIX ---
+    # We changed (224, 224) to (48, 48) to match your model
+    img = img.resize((48, 48)) 
+    # -----------------------
+    
     # Convert to array and normalize (0-1)
     img_array = np.array(img)
     img_array = img_array / 255.0
+    
     # Add batch dimension
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 
+# =========================================================
+# ROUTE 1: HOME PAGE
+# =========================================================
+@app.route('/', methods=['GET'])
+def home():
+    return """
+    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+        <h1 style="color: green;">API is Online! 🚀</h1>
+        <p>The Emotion Recognition Model is loaded and ready.</p>
+        <p>Send <b>POST</b> requests with an image file to: <code>/predict</code></p>
+    </div>
+    """
+
+# =========================================================
+# ROUTE 2: PREDICTION
+# =========================================================
 @app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
@@ -71,5 +92,4 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Run the server
     app.run(debug=True, port=5000)
