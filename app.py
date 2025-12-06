@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
-import cv2
+import cv2  # This is the secret ingredient!
 import os
 
 app = Flask(__name__)
@@ -16,14 +16,11 @@ CLASS_NAMES = ['anger', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 # LOAD MODEL
 print(f"Loading model: {MODEL_FILENAME}...")
-if os.path.exists(MODEL_FILENAME):
-    model = tf.keras.models.load_model(MODEL_FILENAME)
-    print("Model loaded successfully!")
-else:
-    print(f"CRITICAL ERROR: {MODEL_FILENAME} not found!")
-    model = None
+model = tf.keras.models.load_model(MODEL_FILENAME)
+print("Model loaded!")
 
 # LOAD FACE DETECTOR
+# This tool finds faces in the photo
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 def prepare_image(image_bytes):
@@ -32,41 +29,29 @@ def prepare_image(image_bytes):
     if img.mode != "RGB":
         img = img.convert("RGB")
     
+    # 2. Convert to format OpenCV understands
     open_cv_image = np.array(img)
     open_cv_image = open_cv_image[:, :, ::-1].copy() # Convert RGB to BGR
     
-    # 2. Detect Faces
+    # 3. Detect Faces
     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
-    # 3. SMART CROP (The Fix)
+    # 4. CROP THE FACE (Crucial Step!)
     if len(faces) > 0:
-        # Get the largest face
+        # Pick the largest face found
         (x, y, w, h) = sorted(faces, key=lambda f: f[2]*f[3], reverse=True)[0]
         
-        # Calculate a SQUARE crop to prevent distortion
-        center_x, center_y = x + w // 2, y + h // 2
-        max_dim = max(w, h) # Use the largest dimension
-        
-        # Add a little padding (10%) so we don't cut off the chin/forehead
-        max_dim = int(max_dim * 1.2) 
-        
-        # Calculate new coordinates
-        new_x = max(center_x - max_dim // 2, 0)
-        new_y = max(center_y - max_dim // 2, 0)
-        new_w = max_dim
-        new_h = max_dim
-        
-        # Crop the square region
-        img = img.crop((new_x, new_y, new_x + new_w, new_y + new_h))
-        print("✅ Face cropped (Square)!")
+        # Crop exactly the face square
+        img = img.crop((x, y, x+w, y+h))
+        print("✅ Face detected and cropped!")
     else:
-        print("⚠️ No face detected. Using full image.")
+        print("⚠️ No face found. Using full image (Prediction might be bad).")
 
-    # 4. Resize to 48x48 (Now it won't be distorted!)
+    # 5. Resize to 48x48 (Model Requirement)
     img = img.resize((48, 48))
     
-    # 5. Normalize
+    # 6. Normalize
     img_array = np.array(img)
     img_array = img_array / 255.0
     img_array = np.expand_dims(img_array, axis=0)
@@ -75,12 +60,10 @@ def prepare_image(image_bytes):
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Smart AI (Distortion Fixed) is Online! 🚀</h1>"
+    return "<h1>Smart AI is Online! 🚀</h1>"
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None:
-        return jsonify({'error': 'Model not loaded'}), 500
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     
