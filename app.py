@@ -12,7 +12,7 @@ CORS(app)
 # =========================================================
 # CONFIGURATION
 # =========================================================
-# This matches the filename in your screenshot
+# Make sure this matches the filename you uploaded to GitHub!
 MODEL_FILENAME = 'emotion_final_6class.keras'
 CLASS_NAMES = ['anger', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
@@ -42,6 +42,22 @@ def prepare_image(image_bytes):
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 
+# =========================================================
+# ROUTE 1: HOME PAGE (For Browser Checks)
+# =========================================================
+@app.route('/', methods=['GET'])
+def home():
+    return """
+    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+        <h1 style="color: green;">API is Online! 🚀</h1>
+        <p>The Emotion Recognition Model is loaded and ready.</p>
+        <p>Send <b>POST</b> requests with an image file to: <code>/predict</code></p>
+    </div>
+    """
+
+# =========================================================
+# ROUTE 2: PREDICTION (For the App/Website)
+# =========================================================
 @app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
